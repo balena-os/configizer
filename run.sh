@@ -6,4 +6,4 @@
 # * if the device was already handled correctly based on the log, its UUID is skipped
 # * connect to the device with balena ssh, pipe in the task script, and
 #   save the log with the UUID prepended
-stdbuf -oL xargs -I{} -P 10 /bin/sh -c "grep -a -q '{} : DONE' config.log || (cat config.sh | balena ssh {} | sed 's/^/{} : /' | tee --append config.log)" < "batch"
+stdbuf -oL xargs -I{} -P 10 /bin/sh -c "grep -a -q '{} : DONE' config.log 2>/dev/null || (cat config.sh | balena ssh {} | sed 's/^/{} : /' | tee --append config.log)" < "batch"
