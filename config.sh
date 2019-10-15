@@ -4,6 +4,16 @@
 # Configure the script (this is the only part to edit)
 ###
 
+# Edit the relevant values below to to set os.network.connectivty
+# See more details at https://github.com/balena-os/meta-balena#connectivity
+# Example:
+# CONNECTIVITY_URI="https://api.balena-cloud.com/connectivity-check"
+# CONNECTIVITY_INTERVAL=120
+# CONNECTIVITY_RESPONSE=
+CONNECTIVITY_URI=
+CONNECTIVITY_INTERVAL=3600
+CONNECTIVITY_RESPONSE=
+
 # Edit the DNSERVERS string to add specific DNS servers (dnsServers config.json variable)
 # The string is space separated list of servers
 # See more details at https://github.com/balena-os/meta-balena#dnsservers
@@ -66,6 +76,26 @@ tempwork() {
     local TEMPWORK
     TEMPWORK=$(mktemp -t "config.json.work.XXXXXXXXXX") || finish_up "Could not create temporary work file."
     echo "${TEMPWORK}"
+}
+
+###
+# Handling os.network.connectivity
+###
+
+connectivityInsert() {
+    echo "Inserting .os.network.connectivity values"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    jq ".os.network.connectivity.uri = \"${CONNECTIVITY_URI}\" | .os.network.connectivity.interval = \"${CONNECTIVITY_INTERVAL}\" | .os.network.connectivity.response = \"${CONNECTIVITY_RESPONSE}\"" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert .os.network.connectivit value"
+    if [[ "$(jq -e '.os.network.connectivity.uri' "${TEMPWORK}")" == "" ]] ; then
+        finish_up "Failed to insert .os.network.connectivit into config.json."
+    fi
+    mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+}
+
+connectivityPostInsert() {
+    echo "Running .os.network.connectivity post insert tasks"
+    systemctl restart os-networkmanager || true
 }
 
 ###
@@ -166,6 +196,10 @@ main() {
     local anytask="no"
 
     # Check what tasks need to be done
+    if [[ "${CONNECTIVITY_URI}" != "" ]]; then
+        DO_CONNECTIVITY="yes"
+        anytask="yes"
+    fi
     if [[ "${DNSSERVERS}" != "" ]]; then
         DO_DNSSERVERS="yes"
         anytask="yes"
@@ -193,6 +227,9 @@ main() {
     fi
 
     # Do update tasks
+    if [[ "${DO_CONNECTIVITY}" == "yes" ]]; then
+        connectivityInsert
+    fi
     if [[ "${DO_DNSSERVERS}" == "yes" ]]; then
         dnsserversInsert
     fi
@@ -213,6 +250,9 @@ main() {
     mv "${WORKCONFIGFILE}" "${BASECONFIGFILE}"  || finish_up "Could not move final config.json back to the original location"
 
     # Post update tasks
+    if [[ "${DO_CONNECTIVITY}" == "yes" ]]; then
+        connectivityPostInsert
+    fi
     if [[ "${DO_DNSSERVERS}" == "yes" ]]; then
         dnsserversPostInsert
     fi
