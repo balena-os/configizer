@@ -4,6 +4,11 @@
 # Configure the script (this is the only part to edit)
 ###
 
+# Edit the NTPSERVERS string to add specific NTP servers
+# The string is space separated list of servers
+# Example: NTPSERVERS="0.uk.pool.ntp.org 0.europe.pool.ntp.org 0.pool.ntp.org"
+NTPSERVERS=""
+
 # Edit the SSHKEYS array to add your ssh-key, similar to this example:
 # SSHKEY=("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3rIsl4KO2zasaRSC4U6eauGqy5E6zuq4wgApKfzXjjIdtNHfYMC28CCCJvDbbaM2qx02z1x2XsxhvsIVI5+8VNNMXiy9/KRZGqpi1DK4R41k5NgyXW1RtU4CfOU4nFriVif1xq7d96qJTfvDUS47Vbr2aRT001Gq5Qh5Oo+p+YQVhWqn1I4A4VEYCXp69Vn/agZTww6yGnQRCU4Du5WKOTfrEw/BPbNLhndPNejgES+lPiGjTDW3m9rFaWM99TwuI7vQ6Gi+GXwfPCWlhR1frh9fifT8PFw9hhaoTv8q+f/hBuIOcfmWYZ38JfCWrgvYGfNoMiGNY33dd19CmJXgf nobody@nowhere")
 # If you want to add more than one, set it as space separated strings, meaning
@@ -55,6 +60,27 @@ tempwork() {
     TEMPWORK=$(mktemp -t "config.json.work.XXXXXXXXXX") || finish_up "Could not create temporary work file."
     echo "${TEMPWORK}"
 }
+
+###
+# Handling ntpServers
+###
+
+ntpserversInsert() {
+    echo "Inserting ntpServers values"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    jq ".ntpServers = \"${NTPSERVERS}\"" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert ntpServers value"
+    if [[ "$(jq -e '.ntpServers' "${TEMPWORK}")" == "" ]] ; then
+        finish_up "Failed to insert sshKeys into config.json."
+    fi
+    mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+}
+
+ntpserversPostInsert() {
+    echo "Running ntpServers post insert tasks"
+    /usr/bin/resin-ntp-config || true
+}
+
 
 ###
 # Handling sshKey
@@ -114,6 +140,10 @@ main() {
     local anytask="no"
 
     # Check what tasks need to be done
+    if [[ "${NTPSERVERS}" != "" ]]; then
+        DO_NTPSERVERS="yes"
+        anytask="yes"
+    fi
     if (( ${#SSHKEYS[@]} > 0 )); then
         DO_SSHKEYS="yes"
         anytask="yes"
@@ -133,6 +163,9 @@ main() {
     fi
 
     # Do update tasks
+    if [[ "${DO_NTPSERVERS}" == "yes" ]]; then
+        ntpserversInsert
+    fi
     if [[ "${DO_SSHKEYS}" == "yes" ]]; then
         sshkeysInsert
     fi
@@ -147,6 +180,9 @@ main() {
     mv "${WORKCONFIGFILE}" "${BASECONFIGFILE}"  || finish_up "Could not move final config.json back to the original location"
 
     # Post update tasks
+    if [[ "${DO_NTPSERVERS}" == "yes" ]]; then
+        ntpserversPostInsert
+    fi
     if [[ "${DO_SSHKEYS}" == "yes" ]]; then
         sshkeysPostInsert
     fi
