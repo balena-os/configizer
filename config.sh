@@ -4,8 +4,15 @@
 # Configure the script (this is the only part to edit)
 ###
 
-# Edit the NTPSERVERS string to add specific NTP servers
+# Edit the DNSERVERS string to add specific DNS servers (dnsServers config.json variable)
 # The string is space separated list of servers
+# See more details at https://github.com/balena-os/meta-balena#dnsservers
+# Example: DNSSERVERS="1.1.1.1 8.8.8.8 8.8.4.4"
+DNSSERVERS=""
+
+# Edit the NTPSERVERS string to add specific NTP servers (ntpServers config.json variable)
+# The string is space separated list of servers
+# See more details at https://github.com/balena-os/meta-balena#ntpservers
 # Example: NTPSERVERS="0.uk.pool.ntp.org 0.europe.pool.ntp.org 0.pool.ntp.org"
 NTPSERVERS=""
 
@@ -62,6 +69,26 @@ tempwork() {
 }
 
 ###
+# Handling dnsServers
+###
+
+dnsserversInsert() {
+    echo "Inserting dnsServers values"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    jq ".dnsServers = \"${DNSSERVERS}\"" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert ntpServers value"
+    if [[ "$(jq -e '.dnsServers' "${TEMPWORK}")" == "" ]] ; then
+        finish_up "Failed to insert sshKeys into config.json."
+    fi
+    mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+}
+
+dnsserversPostInsert() {
+    echo "Running dnsServers post insert tasks"
+    systemctl restart resin-net-config || true
+}
+
+###
 # Handling ntpServers
 ###
 
@@ -80,7 +107,6 @@ ntpserversPostInsert() {
     echo "Running ntpServers post insert tasks"
     /usr/bin/resin-ntp-config || true
 }
-
 
 ###
 # Handling sshKey
@@ -140,6 +166,10 @@ main() {
     local anytask="no"
 
     # Check what tasks need to be done
+    if [[ "${DNSSERVERS}" != "" ]]; then
+        DO_DNSSERVERS="yes"
+        anytask="yes"
+    fi
     if [[ "${NTPSERVERS}" != "" ]]; then
         DO_NTPSERVERS="yes"
         anytask="yes"
@@ -163,6 +193,9 @@ main() {
     fi
 
     # Do update tasks
+    if [[ "${DO_DNSSERVERS}" == "yes" ]]; then
+        dnsserversInsert
+    fi
     if [[ "${DO_NTPSERVERS}" == "yes" ]]; then
         ntpserversInsert
     fi
@@ -180,6 +213,9 @@ main() {
     mv "${WORKCONFIGFILE}" "${BASECONFIGFILE}"  || finish_up "Could not move final config.json back to the original location"
 
     # Post update tasks
+    if [[ "${DO_DNSSERVERS}" == "yes" ]]; then
+        dnsserversPostInsert
+    fi
     if [[ "${DO_NTPSERVERS}" == "yes" ]]; then
         ntpserversPostInsert
     fi
