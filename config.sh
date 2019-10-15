@@ -100,7 +100,7 @@ sshkeysInsert() {
     done
     update_command+=" ]"
     jq "${update_command}" "${WORKCONFIGFILE}" > "${TEMPWORK}" || finish_up "Failed to create new json with sshKeys inserted."
-    if [ "$(jq -e '.os.sshKeys' "${TEMPWORK}")" == "" ] ; then
+    if [[ "$(jq -e '.os.sshKeys' "${TEMPWORK}")" == "" ]] ; then
         finish_up "Failed to insert sshKeys into config.json."
     fi
     mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
