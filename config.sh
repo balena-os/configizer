@@ -14,6 +14,14 @@ CONNECTIVITY_URI=
 CONNECTIVITY_INTERVAL=3600
 CONNECTIVITY_RESPONSE=
 
+# Edit COUNTRY for the relevant wifi regulatory domain country
+# See more details at https://github.com/balena-os/meta-balena#country
+# The country code should be the ISO 3166-1 alpha-2 code for the
+# relevant country https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+# Example (being in the United Kingdom)
+# COUNTRY="GB"
+COUNTRY=
+
 # Edit the DNSERVERS string to add specific DNS servers (dnsServers config.json variable)
 # The string is space separated list of servers
 # See more details at https://github.com/balena-os/meta-balena#dnsservers
@@ -26,6 +34,12 @@ DNSSERVERS=""
 # Example: NTPSERVERS="0.uk.pool.ntp.org 0.europe.pool.ntp.org 0.pool.ntp.org"
 NTPSERVERS=""
 
+# Edit RANDOMMACADDRESSSCAN to set .os.network.wifi.randomMacAddressScan value
+# See more details at https://github.com/balena-os/meta-balena#wifi
+# The accepted values are "true" and "false", anything else will be discarded
+# Example: RANDOMMACADDRESSSCAN="false"
+RANDOMMACADDRESSSCAN=
+
 # Edit the SSHKEYS array to add your ssh-key, similar to this example:
 # SSHKEY=("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3rIsl4KO2zasaRSC4U6eauGqy5E6zuq4wgApKfzXjjIdtNHfYMC28CCCJvDbbaM2qx02z1x2XsxhvsIVI5+8VNNMXiy9/KRZGqpi1DK4R41k5NgyXW1RtU4CfOU4nFriVif1xq7d96qJTfvDUS47Vbr2aRT001Gq5Qh5Oo+p+YQVhWqn1I4A4VEYCXp69Vn/agZTww6yGnQRCU4Du5WKOTfrEw/BPbNLhndPNejgES+lPiGjTDW3m9rFaWM99TwuI7vQ6Gi+GXwfPCWlhR1frh9fifT8PFw9hhaoTv8q+f/hBuIOcfmWYZ38JfCWrgvYGfNoMiGNY33dd19CmJXgf nobody@nowhere")
 # If you want to add more than one, set it as space separated strings, meaning
@@ -33,6 +47,7 @@ NTPSERVERS=""
 SSHKEYS=()
 
 # Edit/add the UDEVRULES variable to add your UDEV rules
+# Please don't change the line just below this:
 declare -A UDEVRULES
 # * Step 1: `jq -sR . < rulefilename` and replace the outside the outside double quotes " with single quotes '
 # * Add a new line as UDEVRULES[rulename]='<the contents of the previous step>'
@@ -79,23 +94,18 @@ tempwork() {
 }
 
 ###
-# Handling os.network.connectivity
+# Handling dnsServers
 ###
 
-connectivityInsert() {
-    echo "Inserting .os.network.connectivity values"
+countryInsert() {
+    echo "Inserting country values"
     local TEMPWORK
     TEMPWORK=$(tempwork)
-    jq ".os.network.connectivity.uri = \"${CONNECTIVITY_URI}\" | .os.network.connectivity.interval = \"${CONNECTIVITY_INTERVAL}\" | .os.network.connectivity.response = \"${CONNECTIVITY_RESPONSE}\"" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert .os.network.connectivit value"
-    if [[ "$(jq -e '.os.network.connectivity.uri' "${TEMPWORK}")" == "" ]] ; then
-        finish_up "Failed to insert .os.network.connectivit into config.json."
+    jq ".country = \"${COUNTRY}\"" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert country value"
+    if [[ "$(jq -e '.country' "${TEMPWORK}")" == "" ]] ; then
+        finish_up "Failed to insert country into config.json."
     fi
     mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
-}
-
-connectivityPostInsert() {
-    echo "Running .os.network.connectivity post insert tasks"
-    systemctl restart os-networkmanager || true
 }
 
 ###
@@ -113,7 +123,7 @@ dnsserversInsert() {
     mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
 }
 
-dnsserversPostInsert() {
+networkPostInsert() {
     echo "Running dnsServers post insert tasks"
     systemctl restart resin-net-config || true
 }
@@ -167,6 +177,47 @@ sshkeysPostInsert() {
     systemctl restart os-sshkeys || finish_up "ssh keys service did not restart successfully."
 }
 
+###
+# Handling os.network.connectivity
+###
+
+connectivityInsert() {
+    echo "Inserting .os.network.connectivity values"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    jq ".os.network.connectivity.uri = \"${CONNECTIVITY_URI}\" | .os.network.connectivity.interval = \"${CONNECTIVITY_INTERVAL}\" | .os.network.connectivity.response = \"${CONNECTIVITY_RESPONSE}\"" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert .os.network.connectivit value"
+    if [[ "$(jq -e '.os.network.connectivity.uri' "${TEMPWORK}")" == "" ]] ; then
+        finish_up "Failed to insert .os.network.connectivit into config.json."
+    fi
+    mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+}
+
+###
+# Handling .os.network.wifi.randomMacAddressScan
+###
+
+randommacInsert() {
+    echo "Inserting .os.network.wifi.randomMacAddressScan values"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    case ${RANDOMMACADDRESSSCAN} in
+        "true"|"false")
+            jq ".os.network.wifi.randomMacAddressScan = ${RANDOMMACADDRESSSCAN}" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert randomMacAddressScan value"
+            if [[ "$(jq -e '.os.network.wifi.randomMacAddressScan' "${TEMPWORK}")" == "" ]] ; then
+                finish_up "Failed to insert randomMacAddressScan into config.json."
+            fi
+            mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+            ;;
+        *)
+            echo "Invalid value set for RANDOMMACADDRESSSCAN variable, ignoring"
+    esac
+}
+
+networkmanagerPostInsert() {
+    echo "Running .os.network.* post insert tasks"
+    systemctl restart os-networkmanager || true
+}
+
 # Handling udevRules
 udevrulesInsert() {
     echo "Inserting udevRules values"
@@ -200,6 +251,10 @@ main() {
         DO_CONNECTIVITY="yes"
         anytask="yes"
     fi
+    if [[ "${COUNTRY}" != "" ]]; then
+        DO_COUNTRY="yes"
+        anytask="yes"
+    fi
     if [[ "${DNSSERVERS}" != "" ]]; then
         DO_DNSSERVERS="yes"
         anytask="yes"
@@ -210,6 +265,10 @@ main() {
     fi
     if (( ${#SSHKEYS[@]} > 0 )); then
         DO_SSHKEYS="yes"
+        anytask="yes"
+    fi
+    if [[ "${RANDOMMACADDRESSSCAN}" != "" ]]; then
+        DO_RANDOMMACADDRESSSCAN="yes"
         anytask="yes"
     fi
     if (( ${#UDEVRULES[@]} > 0 )); then
@@ -230,6 +289,9 @@ main() {
     if [[ "${DO_CONNECTIVITY}" == "yes" ]]; then
         connectivityInsert
     fi
+    if [[ "${DO_COUNTRY}" == "yes" ]]; then
+        countryInsert
+    fi
     if [[ "${DO_DNSSERVERS}" == "yes" ]]; then
         dnsserversInsert
     fi
@@ -238,6 +300,9 @@ main() {
     fi
     if [[ "${DO_SSHKEYS}" == "yes" ]]; then
         sshkeysInsert
+    fi
+    if [[ "${DO_RANDOMMACADDRESSSCAN}" == "yes" ]]; then
+        randommacInsert
     fi
     if [[ "${DO_UDEVRULES}" == "yes" ]]; then
         udevrulesInsert
@@ -250,11 +315,8 @@ main() {
     mv "${WORKCONFIGFILE}" "${BASECONFIGFILE}"  || finish_up "Could not move final config.json back to the original location"
 
     # Post update tasks
-    if [[ "${DO_CONNECTIVITY}" == "yes" ]]; then
-        connectivityPostInsert
-    fi
-    if [[ "${DO_DNSSERVERS}" == "yes" ]]; then
-        dnsserversPostInsert
+    if [[ "${DO_COUNTRY}" == "yes" ]] || [[ "${DO_DNSSERVERS}" == "yes" ]]; then
+        networkPostInsert
     fi
     if [[ "${DO_NTPSERVERS}" == "yes" ]]; then
         ntpserversPostInsert
@@ -264,6 +326,9 @@ main() {
     fi
     if [[ "${DO_UDEVRULES}" == "yes" ]]; then
         udevrulesPostInsert
+    fi
+    if [[ "${DO_CONNECTIVITY}" == "yes" ]] || [[ "${DO_RANDOMMACADDRESSSCAN}" == "yes" ]]; then
+        networkmanagerPostInsert
     fi
 
     # Restart the supervisor
