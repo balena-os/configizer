@@ -345,7 +345,7 @@ main() {
         fi
     fi
     sleep 10
-    if ! balena ps | grep -q resin_supervisor ; then
+    if ! balena ps | grep -q "\(resin\|balena\)_supervisor" ; then
         finish_up "Supervisor not restarted properly after while."
     fi
     # All done
