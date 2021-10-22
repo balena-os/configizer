@@ -4,6 +4,10 @@
 # Configure the script (this is the only part to edit)
 ###
 
+# setting a new device key changes one physical device from one logical device in the backend
+# to another one. This is useful to change device keys if they got leaked.
+NEW_DEVICE_KEY=
+
 # Edit the relevant values below to to set os.network.connectivty
 # See more details at https://github.com/balena-os/meta-balena#connectivity
 # Example:
@@ -128,6 +132,13 @@ networkPostInsert() {
     systemctl restart resin-net-config || true
 }
 
+postDeviceIdentityChange() {
+    echo "Restarting services after identity change"
+    # this should happen after we close the SSH connection, 
+    # therefore nohup + spawning
+    nohup sh -c "sleep 10 ; systemctl restart openvpn" &
+}
+
 ###
 # Handling ntpServers
 ###
@@ -192,6 +203,18 @@ connectivityInsert() {
     mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
 }
 
+newDeviceKeyInsert() {
+    echo "Inserting .deviceApiKey value"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    CLOUD_ENV=$(jq -j .apiEndpoint "$WORKCONFIGFILE" | sed 's/.*\///')
+    jq ".deviceApiKey = \"${NEW_DEVICE_KEY}\" | .deviceApiKeys.\"${CLOUD_ENV}\" = \"${NEW_DEVICE_KEY}\" " "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert .deviceApiKey value"
+    if [[ "$(jq -e '.deviceApiKey' "${TEMPWORK}")" == "" ]] ; then
+        finish_up "Failed to insert .deviceApiKey into config.json."
+    fi
+    mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+}
+
 ###
 # Handling .os.network.wifi.randomMacAddressScan
 ###
@@ -247,6 +270,10 @@ main() {
     local anytask="no"
 
     # Check what tasks need to be done
+    if [[ "${NEW_DEVICE_KEY}" != "" ]]; then
+        DO_NEW_DEVICE_KEY="yes"
+        anytask="yes"
+    fi
     if [[ "${CONNECTIVITY_URI}" != "" ]]; then
         DO_CONNECTIVITY="yes"
         anytask="yes"
@@ -286,6 +313,9 @@ main() {
     fi
 
     # Do update tasks
+    if [[ "${DO_NEW_DEVICE_KEY}" == "yes" ]]; then
+        newDeviceKeyInsert
+    fi
     if [[ "${DO_CONNECTIVITY}" == "yes" ]]; then
         connectivityInsert
     fi
@@ -348,6 +378,12 @@ main() {
     if ! balena ps | grep -q "\(resin\|balena\)_supervisor" ; then
         finish_up "Supervisor not restarted properly after while."
     fi
+
+    if [[ "${DO_NEW_DEVICE_KEY}" == "yes" ]] ; then
+        # this will kill the VPN connection after some timeout, so be sure to keep this last!
+        postDeviceIdentityChange
+    fi
+
     # All done
     finish_up
 }
