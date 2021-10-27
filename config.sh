@@ -343,6 +343,7 @@ main() {
 
     # copy the config back
     mv "${WORKCONFIGFILE}" "${BASECONFIGFILE}"  || finish_up "Could not move final config.json back to the original location"
+    sync -f "${BASECONFIGFILE}"
 
     # Post update tasks
     if [[ "${DO_COUNTRY}" == "yes" ]] || [[ "${DO_DNSSERVERS}" == "yes" ]]; then
