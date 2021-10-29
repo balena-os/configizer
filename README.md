@@ -11,6 +11,7 @@ See the full list of the supported entries in the [meta-balena README][meta-bale
 
 * `config.sh` is the script that will be run on the device. In the headers of that file, there are a number of settings, modify any of them that you want to use, leave the rest as it is. Only those modifications will be run on the device that are the non-default values. Each entry has a help text to assist in filling it out
 * create a file called `batch`, and add the UUIDs of the devices that you want to modify there, one by one
+* in case that you also need to change the API Keys of the devices, create a file called `new_keys` with the UUID & new device API key pairs, according to the `new_keys.example`
 * ensure that you are logged in with the CLI (e.g. by checking `balena whoami`)
 * to run the script on the given devices, start with `./run.sh` (Linux is supported at the moment, might need to make that file executable, or run it with `bash ./run.sh`)
 * you will see the logs of the updates, and those are also saved into a logfile
