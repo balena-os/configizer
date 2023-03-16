@@ -1,4 +1,18 @@
 - commits:
+    - subject: Update to balena-cloud and cloudlink domains
+      hash: 1c302ffdb770701d1e70067509ef86630db57d90
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: jaomaloy <jao.maloy@balena.io>
+        signed-off-by: jaomaloy <jao.maloy@balena.io>
+      author: jaomaloy
+      nested: []
+  version: 0.1.3
+  title: ""
+  date: 2023-03-16T11:48:56.658Z
+- commits:
     - subject: "workflows: add flowzone"
       hash: d0c90b867341d01c0c4a58d4e304fadb745e5093
       body: |
