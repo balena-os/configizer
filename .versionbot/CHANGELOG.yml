@@ -1,0 +1,91 @@
+- commits:
+    - subject: "workflows: add flowzone"
+      hash: d0c90b867341d01c0c4a58d4e304fadb745e5093
+      body: |
+        resinCI is now deprecated by flowzone.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Alex Gonzalez <alexg@balena.io>
+        signed-off-by: Alex Gonzalez <alexg@balena.io>
+      author: Alex Gonzalez
+      nested: []
+  version: 0.1.2
+  title: ""
+  date: 2023-03-16T11:43:40.297Z
+- version: 0.1.1
+  date: 2021-10-29T16:14:14Z
+  commits:
+    - hash: df8cc734963498aed1b9fa98fb6efe8b5b9d8408
+      author: Thodoris Greasidis
+      footers:
+        change-type: patch
+      subject: "README: Add usage instructions for changing the device API key"
+      body: null
+- version: 0.1.0
+- date: 2021-10-28T09:06:51Z
+- commits:
+    - hash: a1668dc131a28b49327d7ba05bd46e205707ee6a
+- commits:
+    - author: Martin Rauscher
+- commits:
+    - footers:
+        change-type: patch
+- commits:
+    - footers:
+        signed-off-by: Martin Rauscher <martin@balena.io>
+- commits:
+    - subject: fix balena vs resin supervisor check
+- commits:
+    - body: null
+- commits:
+    - hash: 97bc73bbcebf381bc645ab92c5bf8f204c9ca6cb
+- commits:
+    - author: Martin Rauscher
+- commits:
+    - footers:
+        change-type: minor
+- commits:
+    - footers:
+        signed-off-by: Martin Rauscher <martin@balena.io>
+- commits:
+    - subject: "add feature: change device api key"
+- commits:
+    - body: null
+- commits:
+    - hash: 6d261235f086190b1a7951f3d64a4c3d19d7d246
+- commits:
+    - author: Martin Rauscher
+- commits:
+    - footers:
+        change-type: patch
+- commits:
+    - footers:
+        signed-off-by: Martin Rauscher <martin@balena.io>
+- commits:
+    - subject: add fs-sync to ensure we don't lose changes
+- commits:
+    - body: null
+- commits:
+    - hash: 4e43ade46659b13956fb4fba5112cf8a289a6344
+- commits:
+    - author: Martin Rauscher
+- commits:
+    - footers:
+        change-type: patch
+- commits:
+    - footers:
+        signed-off-by: Martin Rauscher <martin@balena.io>
+- commits:
+    - subject: add repo.yml
+- commits:
+    - body: null
+- commits:
+    - hash: 325452eb0950110ef72dc8f7c4e0d73152775e76
+- commits:
+    - author: Marten Jacobs
+- commits:
+    - subject: Add support for macOS tee
+- commits:
+    - body: "`tee` on macOS does not allow for long arguments such as `--append` but
+        only the short form `-a`"
