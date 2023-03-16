@@ -38,6 +38,16 @@ DNSSERVERS=""
 # Example: NTPSERVERS="0.uk.pool.ntp.org 0.europe.pool.ntp.org 0.pool.ntp.org"
 NTPSERVERS=""
 
+# Edit DOMAIN_UPDATE to set the domains to "balena-cloud.com" instead of "resin.io"
+# The accepted values are "true" and "false", anything else will be discarded
+# Example: DOMAIN_UPDATE="true"
+DOMAIN_UPDATE="true"
+
+# Edit CLOUDLINK_UPDATE to set the vpnEndpoint to "cloudlink" instead of "vpn"
+# The accepted values are "true" and "false", anything else will be discarded
+# Example: CLOUDLINK_UPDATE="true"
+CLOUDLINK_UPDATE="true"
+
 # Edit RANDOMMACADDRESSSCAN to set .os.network.wifi.randomMacAddressScan value
 # See more details at https://github.com/balena-os/meta-balena#wifi
 # The accepted values are "true" and "false", anything else will be discarded
@@ -215,6 +225,51 @@ newDeviceKeyInsert() {
     mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
 }
 
+
+###
+# Handling domain update
+###
+domainUpdate() {
+  echo "Updating the domain to balena-cloud.com instead of resin.io"
+  local TEMPWORK
+  TEMPWORK=$(tempwork)
+  case ${DOMAIN_UPDATE} in
+      "true"|"false")
+          if [[ ${DOMAIN_UPDATE} == "true" ]]; then
+            cat "$WORKCONFIGFILE" | sed 's/resin.io/balena-cloud.com/g' > "$TEMPWORK"|| finish_up "Couldn't change domain to balena-cloud.com"
+            if [[ "$(jq -e '.apiEndpoint' "${TEMPWORK}")" == "" ]] ; then
+                finish_up "Failed to change the domains into config.json."
+            fi
+            mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+          fi
+          ;;
+      *)
+          echo "Invalid value set for DOMAIN_UPDATE variable, ignoring"
+  esac
+}
+
+###
+# Handling vpnEndpoint updates
+###
+cloudlinkUpdate() {
+    echo "Updating VPN URL to cloudlink"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    case ${CLOUDLINK_UPDATE} in
+        "true"|"false")
+            if [[ ${CLOUDLINK_UPDATE} == "true" ]]; then
+              jq ".vpnEndpoint = \"cloudlink.balena-cloud.com\"" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Couldn't insert correct vpnEndpoint value"
+              if [[ "$(jq -e '.vpnEndpoint' "${TEMPWORK}")" == "" ]] ; then
+                  finish_up "Failed to insert correct vpnEndpoint into config.json."
+              fi
+              mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+            fi
+            ;;
+        *)
+            echo "Invalid value set for CLOUDLINK_UPDATE variable, ignoring"
+    esac
+}
+
 ###
 # Handling .os.network.wifi.randomMacAddressScan
 ###
@@ -294,6 +349,14 @@ main() {
         DO_SSHKEYS="yes"
         anytask="yes"
     fi
+    if [[ "${DOMAIN_UPDATE}" != "" ]]; then
+        DO_DOMAINUPDATE="yes"
+        anytask="yes"
+    fi
+    if [[ "${CLOUDLINK_UPDATE}" != "" ]]; then
+        DO_CLOUDLINKUPDATE="yes"
+        anytask="yes"
+    fi
     if [[ "${RANDOMMACADDRESSSCAN}" != "" ]]; then
         DO_RANDOMMACADDRESSSCAN="yes"
         anytask="yes"
@@ -330,6 +393,12 @@ main() {
     fi
     if [[ "${DO_SSHKEYS}" == "yes" ]]; then
         sshkeysInsert
+    fi
+    if [[ "${DO_DOMAINUPDATE}" == "yes" ]]; then
+        domainUpdate
+    fi
+    if [[ "${DO_CLOUDLINKUPDATE}" == "yes" ]]; then
+        cloudlinkUpdate
     fi
     if [[ "${DO_RANDOMMACADDRESSSCAN}" == "yes" ]]; then
         randommacInsert
