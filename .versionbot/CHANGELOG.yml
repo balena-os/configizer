@@ -1,4 +1,16 @@
 - commits:
+    - subject: "feat: add possibility to clear all sshKeys from config"
+      hash: 38ccc8302c0083866623b457878c3161f07178e7
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Robbe Goethals
+      nested: []
+  version: 0.1.5
+  title: ""
+  date: 2023-09-15T16:25:08.905Z
+- commits:
     - subject: "flowzone: allow external contributions"
       hash: b53ec554174da00e46af26e46b36fd8c090843a6
       body: ""
