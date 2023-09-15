@@ -54,6 +54,9 @@ CLOUDLINK_UPDATE="true"
 # Example: RANDOMMACADDRESSSCAN="false"
 RANDOMMACADDRESSSCAN=
 
+# Set this variable to "TRUE" to delete all ssh-keys present in the config
+DELETEALLSSHKEYS="FALSE"
+
 # Edit the SSHKEYS array to add your ssh-key, similar to this example:
 # SSHKEY=("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3rIsl4KO2zasaRSC4U6eauGqy5E6zuq4wgApKfzXjjIdtNHfYMC28CCCJvDbbaM2qx02z1x2XsxhvsIVI5+8VNNMXiy9/KRZGqpi1DK4R41k5NgyXW1RtU4CfOU4nFriVif1xq7d96qJTfvDUS47Vbr2aRT001Gq5Qh5Oo+p+YQVhWqn1I4A4VEYCXp69Vn/agZTww6yGnQRCU4Du5WKOTfrEw/BPbNLhndPNejgES+lPiGjTDW3m9rFaWM99TwuI7vQ6Gi+GXwfPCWlhR1frh9fifT8PFw9hhaoTv8q+f/hBuIOcfmWYZ38JfCWrgvYGfNoMiGNY33dd19CmJXgf nobody@nowhere")
 # If you want to add more than one, set it as space separated strings, meaning
@@ -172,6 +175,18 @@ ntpserversPostInsert() {
 ###
 # Handling sshKey
 ###
+deleteAllSshkeys() {
+    echo "Deleting all sshKeys"
+    local TEMPWORK
+    TEMPWORK=$(tempwork)
+    jq "del(.os.sshKeys[])" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Could not delete all sshKeys"
+    if [[ "$(jq -e '.os.sshKeys[]' "${TEMPWORK}")" == "" ]] ; then
+        mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
+    else
+	finish_up "Could not delete all sshKeys"
+    fi
+}
+
 sshkeysInsert() {
     echo "Inserting sshKeys values"
     local TEMPWORK
@@ -345,6 +360,10 @@ main() {
         DO_NTPSERVERS="yes"
         anytask="yes"
     fi
+    if [[ "${DELETEALLSSHKEYS}" == "TRUE" ]]; then
+	DO_DELETE_SSHKEYS="yes"
+	anytask="yes"
+    fi
     if (( ${#SSHKEYS[@]} > 0 )); then
         DO_SSHKEYS="yes"
         anytask="yes"
@@ -391,6 +410,9 @@ main() {
     if [[ "${DO_NTPSERVERS}" == "yes" ]]; then
         ntpserversInsert
     fi
+    if [[ "${DO_DELETE_SSHKEYS}" == "yes" ]]; then
+	deleteAllSshkeys
+    fi
     if [[ "${DO_SSHKEYS}" == "yes" ]]; then
         sshkeysInsert
     fi
@@ -421,7 +443,7 @@ main() {
     if [[ "${DO_NTPSERVERS}" == "yes" ]]; then
         ntpserversPostInsert
     fi
-    if [[ "${DO_SSHKEYS}" == "yes" ]]; then
+    if [[ "${DO_SSHKEYS}" == "yes" || "${DO_DELETE_SSHKEYS}" == "yes" ]]; then
         sshkeysPostInsert
     fi
     if [[ "${DO_UDEVRULES}" == "yes" ]]; then
