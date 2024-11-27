@@ -7,6 +7,9 @@ Any entry that the supervisor learns to support will be removed from this tool, 
 
 See the full list of the supported entries in the [meta-balena README][meta-balena readme].
 
+> [!WARNING]
+> Editing config.json on a provisioned device should be done very carefully as any mistakes in the syntax of this file can leave a device inaccessible. By using this utility you are accepting that risk.
+
 ## Usage
 
 * `config.sh` is the script that will be run on the device. In the headers of that file, there are a number of settings, modify any of them that you want to use, leave the rest as it is. Only those modifications will be run on the device that are the non-default values. Each entry has a help text to assist in filling it out
