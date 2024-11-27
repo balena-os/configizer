@@ -1,4 +1,16 @@
 - commits:
+    - subject: Add disclaimer to README
+      hash: 15bfd07b45ca33a59639501a3b879f773136570a
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Kyle Harding
+      nested: []
+  version: 0.1.7
+  title: ""
+  date: 2024-11-27T18:19:58.052Z
+- commits:
     - subject: Avoid duplicate workflows for external contributors
       hash: 72ca5117f195b26b277bd309a3939e9add48ef5e
       body: ""
