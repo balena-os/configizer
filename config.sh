@@ -179,8 +179,8 @@ deleteAllSshkeys() {
     echo "Deleting all sshKeys"
     local TEMPWORK
     TEMPWORK=$(tempwork)
-    jq "del(.os.sshKeys[])" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Could not delete all sshKeys"
-    if [[ "$(jq -e '.os.sshKeys[]' "${TEMPWORK}")" == "" ]] ; then
+    jq "del(.os.sshKeys)" "$WORKCONFIGFILE" > "$TEMPWORK" || finish_up "Could not delete all sshKeys"
+    if [[ "$(jq -e '.os.sshKeys' "${TEMPWORK}")" == null ]] ; then
         mv "${TEMPWORK}" "${WORKCONFIGFILE}" || finish_up "Failed to update working copy of config.json"
     else
 	finish_up "Could not delete all sshKeys"
