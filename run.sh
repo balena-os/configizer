@@ -7,4 +7,4 @@
 # * connect to the device with balena ssh, pipe in the task script, and
 #   save the log with the UUID prepended
 cat ./batch | \
-	stdbuf -oL xargs -x -L 1 -P 10 ./run-one.sh
+	stdbuf -oL xargs -L 1 -n 1 -x -P 10 ./run-one.sh

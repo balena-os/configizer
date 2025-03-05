@@ -6,7 +6,7 @@
 uuid=$1
 
 # don't run if the device has already been processed
-grep -a -q '{} : DONE' config.log 2>/dev/null && exit 0
+grep -a -q "${uuid} : DONE" config.log 2>/dev/null && exit 0
 
 # these settings need to be handled separately because they need to be different 
 # per-device even when processing a large batch
