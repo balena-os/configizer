@@ -1,4 +1,18 @@
 - commits:
+    - subject: "bugfix: Delete sshkeys array rather than elements"
+      hash: 18b04e211bc1ac7b09c34bd7b10c639768e52dc2
+      body: >
+        Delete the os.sshKeys array to align with expectations of balenaOS
+        development-features service for passwordless ssh.
+      footer:
+        Change-Type: patch
+        change-type: patch
+      author: Mathias H. Egeberg
+      nested: []
+  version: 0.1.8
+  title: ""
+  date: 2025-03-05T16:04:44.102Z
+- commits:
     - subject: Add disclaimer to README
       hash: 15bfd07b45ca33a59639501a3b879f773136570a
       body: ""
