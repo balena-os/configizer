@@ -21,6 +21,6 @@ newKey=$(grep "${uuid}" new_keys | sed 's/.*\s*->\s*//')
 		| sed "s/^NEW_DEVICE_KEY=.*/NEW_DEVICE_KEY=${newKey}/"
 	fi
 ) \
-| balena ssh "${uuid}" \
+| balena device ssh "${uuid}" \
 | sed "s/^/${uuid} : /" \
 | tee -a config.log
